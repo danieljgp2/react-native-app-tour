@@ -8,7 +8,7 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.util.Log;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.app.Dialog;
 import android.view.View;
 import android.app.AlertDialog;
@@ -87,44 +87,49 @@ public class RNAppTourModule extends ReactContextBaseJavaModule {
                                 continue;
                             }
 
-                            TapTarget tapTarget = generateTapTarget(refView, props.getMap(String.valueOf(view)));
-                            targetViews.add(tapTarget);
+                            if (refView != null) {
+                                TapTarget tapTarget = generateTapTarget(refView, props.getMap(String.valueOf(view)));
+                                targetViews.add(tapTarget);
+                            }
+
                         }
 
-                        TapTargetSequence tapTargetSequence = new TapTargetSequence(dialog).targets(targetViews);
-                        tapTargetSequence.considerOuterCircleCanceled(true);
+                        if (targetViews.size() > 0) {
+                            TapTargetSequence tapTargetSequence = new TapTargetSequence(dialog).targets(targetViews);
+                            tapTargetSequence.considerOuterCircleCanceled(true);
 
-                        tapTargetSequence.listener(new TapTargetSequence.Listener() {
-                            @Override
-                            public void onSequenceFinish() {
-                                WritableMap params = Arguments.createMap();
-                                params.putBoolean("finish", true);
+                            tapTargetSequence.listener(new TapTargetSequence.Listener() {
+                                @Override
+                                public void onSequenceFinish() {
+                                    WritableMap params = Arguments.createMap();
+                                    params.putBoolean("finish", true);
 
-                                sendEvent(getReactApplicationContext(), "onFinishSequenceEvent", params);
+                                    sendEvent(getReactApplicationContext(), "onFinishSequenceEvent", params);
 
-                                // dismiss dialog on finish
-                                if (dialog != null && dialog.isShowing()) {
-                                    dialog.dismiss();
+                                    // dismiss dialog on finish
+                                    if (dialog != null && dialog.isShowing()) {
+                                        dialog.dismiss();
+                                    }
                                 }
-                            }
 
-                            @Override
-                            public void onSequenceStep(TapTarget lastTarget, boolean targetClicked) {
-                                WritableMap params = Arguments.createMap();
-                                params.putBoolean("next_step", true);
+                                @Override
+                                public void onSequenceStep(TapTarget lastTarget, boolean targetClicked) {
+                                    WritableMap params = Arguments.createMap();
+                                    params.putBoolean("next_step", true);
 
-                                sendEvent(getReactApplicationContext(), "onShowSequenceStepEvent", params);
-                            }
+                                    sendEvent(getReactApplicationContext(), "onShowSequenceStepEvent", params);
+                                }
 
-                            @Override
-                            public void onSequenceCanceled(TapTarget lastTarget) {
-                                WritableMap params = Arguments.createMap();
-                                params.putBoolean("cancel_step", true);
+                                @Override
+                                public void onSequenceCanceled(TapTarget lastTarget) {
+                                    WritableMap params = Arguments.createMap();
+                                    params.putBoolean("cancel_step", true);
 
-                                sendEvent(getReactApplicationContext(), "onCancelStepEvent", params);
-                            }
-                        }).continueOnCancel(true);
-                        tapTargetSequence.start();
+                                    sendEvent(getReactApplicationContext(), "onCancelStepEvent", params);
+                                }
+                            }).continueOnCancel(true);
+                            tapTargetSequence.start();
+                        }
                     }
                 });
             }
@@ -270,12 +275,10 @@ public class RNAppTourModule extends ReactContextBaseJavaModule {
         }
 
         // Populate Props
-        // TapTarget targetView = TapTarget.forView(view, title, description);
         int[] points = new int[2];
         view.getLocationOnScreen(points);
-        Rect rectBonds = new Rect(points[0], points[1], points[0] + view.getWidth(), points[1] + view.getHeight());
 
-        TapTarget targetView = TapTarget.forBounds(rectBonds, title, description);
+        TapTarget targetView = TapTarget.forView(view, title, description);
 
         if (outerCircleColor != null && outerCircleColor.length() > 0)
             targetView.outerCircleColorInt(Color.parseColor(outerCircleColor));
